@@ -46,9 +46,9 @@ def get_trends(terms):
 
 
 def scrape_google(terms):
-    pytrends.build_payload(terms, cat=0, timeframe='2019-01-01 2021-01-01', geo='', gprop='')
+    pytrends.build_payload(terms, cat=0, timeframe='2019-01-01 2021-01-01', geo='US', gprop='')
     trends = pytrends.interest_over_time().drop(columns=['isPartial'])
-    time.sleep(1)
+    time.sleep(2)
     return trends
 
 
@@ -148,7 +148,7 @@ trends
 # In[16]:
 
 
-for i in range(0,len(sv_trends.index)-1):
+for i in range(0,len(sv_trends.index)):
     sv_trends[i:i+1] = sv_trends[i:i+1].mul((volume[i]/4)/50)
 
 
