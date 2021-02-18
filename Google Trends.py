@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[25]:
+# In[1]:
 
 
 from pytrends.request import TrendReq
@@ -17,14 +17,14 @@ from string import ascii_uppercase
 pytrends = TrendReq(hl='en-US', tz=360, timeout=(10, 25))
 
 
-# In[26]:
+# In[2]:
 
 
 #Import the excel doc of keywords
 terms_df = pd.read_excel('GoogleTrendTerms.xlsx', index_col=None)
 
 
-# In[27]:
+# In[3]:
 
 
 #Get the terms and monthly search volumes if they exists
@@ -36,7 +36,7 @@ except:
     volume = [0 for num in range(0,len(terms))]
 
 
-# In[28]:
+# In[4]:
 
 
 #Loops through the list of keywords and creates pandas df out of the scrape_google function output
@@ -50,7 +50,7 @@ def get_trends(terms):
     return trends
 
 
-# In[29]:
+# In[5]:
 
 
 #All categories: https://github.com/pat310/google-trends-api/wiki/Google-Trends-Categories
@@ -62,7 +62,7 @@ def scrape_google(terms):
     return trends
 
 
-# In[120]:
+# In[6]:
 
 
 #Scrape the list of keywords and 
@@ -71,7 +71,7 @@ trends = trends_df.copy()
 trends
 
 
-# In[121]:
+# In[7]:
 
 
 #Create a week column and add to DataFrame
@@ -84,20 +84,20 @@ for row in range(0,len(trends)):
 trends.insert(0, 'week number', week_number)
 
 
-# In[122]:
+# In[8]:
 
 
 #make the indexes strings
 trends.index = trends.index.astype(str) 
 
 
-# In[123]:
+# In[9]:
 
 
 #Should prob check that the stardard error is exceptable
 
 
-# In[124]:
+# In[10]:
 
 
 #Calc the percent change from year one to year 2
@@ -110,7 +110,7 @@ def get_year_avg(col):
     return change
 
 
-# In[125]:
+# In[11]:
 
 
 #Create list of search volume metrics to create trend_stats df
@@ -126,7 +126,7 @@ for col in list(trends.columns)[1:]:
     yearly_change.append(get_year_avg(col))
 
 
-# In[126]:
+# In[12]:
 
 
 #Construct trend_stats df
@@ -140,19 +140,19 @@ data = {
 trend_stats = pd.DataFrame(data) 
 
 
-# In[127]:
+# In[13]:
 
 
 trend_stats
 
 
-# In[128]:
+# In[14]:
 
 
 len(volume)
 
 
-# In[129]:
+# In[15]:
 
 
 trends = trends.drop(columns=['week number'])
@@ -166,14 +166,14 @@ trends.insert(0, "avg monthly volume", volume)
 trends
 
 
-# In[130]:
+# In[16]:
 
 
 for i in range(0,len(sv_trends.index)):
     sv_trends[i:i+1] = sv_trends[i:i+1].mul((volume[i]/4)/50)
 
 
-# In[131]:
+# In[17]:
 
 
 def get_col(col_number):
@@ -192,7 +192,7 @@ def get_col(col_number):
         return col
 
 
-# In[134]:
+# In[18]:
 
 
 today = date.today()
@@ -210,17 +210,17 @@ vol_sheet = writer.sheets['Volume Trends']
 
 trends_sheet.set_column(2, len(trends.columns), 10)
 trends_sheet.set_column(0, 1, 25)
-trends_sheet.set_column(1, 2, 12)
+trends_sheet.set_column(1, 2, 18)
 
 for row in range(2,len(trends)+2):
-    trends_sheet.conditional_format('C{}:{}{}'.format(row, get_col(len(trends.columns)), row), {'type': '3_color_scale'})
+    trends_sheet.conditional_format('C{}:{}{}'.format(row, get_col(len(trends.columns)+1), row), {'type': '3_color_scale'})
 
 
 vol_sheet.set_column(1, len(trends.columns), 10)
 vol_sheet.set_column(0, 1, 25)
 
 for row in range(0,len(trends)+2):
-    vol_sheet.conditional_format('C{}:{}{}'.format(row, get_col(len(trends.columns)), row), {'type': '3_color_scale'})
+    vol_sheet.conditional_format('B{}:{}{}'.format(row, get_col(len(trends.columns)), row), {'type': '3_color_scale'})
 
 
 stats_sheet.set_column('A:A', 30)
@@ -233,4 +233,10 @@ for row in range(0,len(trend_stats)):
     stats_sheet.set_row(row+2, 25)
     
 writer.save()
+
+
+# In[ ]:
+
+
+
 
