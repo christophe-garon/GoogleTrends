@@ -13,6 +13,7 @@ from datetime import date
 import math
 import pandas as pd
 from string import ascii_uppercase
+import numpy as np
 
 pytrends = TrendReq(hl='en-US', tz=360, timeout=(10, 25))
 
@@ -56,8 +57,13 @@ def get_trends(terms):
 #All categories: https://github.com/pat310/google-trends-api/wiki/Google-Trends-Categories
 
 def scrape_google(terms):
-    pytrends.build_payload(terms, cat=0, timeframe='2019-01-01 2021-01-01', geo='US', gprop='')
-    trends = pytrends.interest_over_time().drop(columns=['isPartial'])
+    pytrends.build_payload(terms, cat=0, timeframe='2018-01-01 2020-01-01', geo='US', gprop='')
+    trends = pytrends.interest_over_time()
+    try:
+        trends = trends.drop(columns=['isPartial'])
+    except:
+        pass
+    
     #time.sleep(1)
     return trends
 
@@ -121,9 +127,14 @@ yearly_change = []
 standard_error = []
 
 for col in list(trends.columns)[1:]:
-    percent_change.append(linregress(week, list(trends[col]))[0] * 100)
-    standard_error.append(linregress(week, list(trends[col]))[4])
-    yearly_change.append(get_year_avg(col))
+    try:
+        percent_change.append(linregress(week, list(trends[col]))[0] * 100)
+        standard_error.append(linregress(week, list(trends[col]))[4])
+        yearly_change.append(get_year_avg(col))
+    except:
+        percent_change.append(0)
+        standard_error.append(0)
+        yearly_change.append(0)
 
 
 # In[12]:
@@ -143,37 +154,39 @@ trend_stats = pd.DataFrame(data)
 # In[13]:
 
 
-trend_stats
+trends = trends.drop(columns=['week number'])
+
+#Transpose the trends and make a copy. Makes calculations more intuitive
+sv_trends = trends.copy().transpose()
+trends = trends.transpose()
 
 
 # In[14]:
 
 
-len(volume)
+volumes_col = []
+for i in range(0, len(terms)):
+    if terms[i] in list(trends.index):
+        volumes_col.append(volume[i])
+
+try:
+    trends.insert(0, "avg monthly volume", volumes_col)
+except:
+    pass
+
+trends
 
 
 # In[15]:
 
 
-trends = trends.drop(columns=['week number'])
-
-#Transpose the trends and make a copy. Makes calculations more intuitive
-sv_trends = trends.copy().transpose()
-sv_trends
-
-trends = trends.transpose()
-trends.insert(0, "avg monthly volume", volume)
-trends
+for i in range(0,len(sv_trends.index)):
+    sv_trends[i:i+1] = sv_trends[i:i+1].mul((volume[i]/4)/50)
+    
+sv_trends.insert(loc=0, column='Trend Lines', value=['' for i in range(sv_trends.shape[0])])
 
 
 # In[16]:
-
-
-for i in range(0,len(sv_trends.index)):
-    sv_trends[i:i+1] = sv_trends[i:i+1].mul((volume[i]/4)/50)
-
-
-# In[17]:
 
 
 def get_col(col_number):
@@ -192,7 +205,7 @@ def get_col(col_number):
         return col
 
 
-# In[18]:
+# In[17]:
 
 
 today = date.today()
@@ -208,6 +221,7 @@ stats_sheet = writer.sheets['Trend Stats']
 trends_sheet = writer.sheets['Trends']
 vol_sheet = writer.sheets['Volume Trends']
 
+#trends sheet formatting
 trends_sheet.set_column(2, len(trends.columns), 10)
 trends_sheet.set_column(0, 1, 25)
 trends_sheet.set_column(1, 2, 18)
@@ -216,13 +230,21 @@ for row in range(2,len(trends)+2):
     trends_sheet.conditional_format('C{}:{}{}'.format(row, get_col(len(trends.columns)+1), row), {'type': '3_color_scale'})
 
 
-vol_sheet.set_column(1, len(trends.columns), 10)
+#volume sheet formatting    
+vol_sheet.set_column(2, len(sv_trends.columns), 10)
 vol_sheet.set_column(0, 1, 25)
 
-for row in range(0,len(trends)+2):
-    vol_sheet.conditional_format('B{}:{}{}'.format(row, get_col(len(trends.columns)), row), {'type': '3_color_scale'})
+
+for row in range(0,len(sv_trends)):
+    vol_sheet.add_sparkline('B{}'.format(row+2), {'range': 'Trends!{}{}:{}{}'.format(get_col(3),row+2, get_col(len(trends.columns)), row+2)})
+    vol_sheet.set_row(row+2, 25)
 
 
+for row in range(0,len(sv_trends)+2):
+    vol_sheet.conditional_format('B{}:{}{}'.format(row, get_col(len(trends.columns)+1), row), {'type': '3_color_scale'})
+
+    
+#stat sheet formatting
 stats_sheet.set_column('A:A', 30)
 stats_sheet.set_column('E:E', 100)
 stats_sheet.set_column(1, 4, 14)
@@ -233,6 +255,18 @@ for row in range(0,len(trend_stats)):
     stats_sheet.set_row(row+2, 25)
     
 writer.save()
+
+
+# In[ ]:
+
+
+
+
+
+# In[ ]:
+
+
+
 
 
 # In[ ]:
